@@ -39,8 +39,8 @@ function switchMode() {
 function startTimer() {
     if (timerId !== null) return;
     
-    // If timer hasn't been started yet, prompt for task
-    if (timerTitle.textContent === 'Pomodoro Timer') {
+    // Only prompt for task if this is a fresh timer (not paused)
+    if (timerTitle.textContent === 'Pomodoro Timer' && timeLeft === 25 * 60) {
         const task = prompt('What are you focusing on?');
         if (task && task.trim()) {
             timerTitle.textContent = task.trim();
