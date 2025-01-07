@@ -8,6 +8,12 @@ const startButton = document.getElementById('start');
 const resetButton = document.getElementById('reset');
 const modeText = document.getElementById('mode-text');
 const toggleModeButton = document.getElementById('toggle-mode');
+const themeLightBtn = document.getElementById('theme-light');
+const themeDarkBtn = document.getElementById('theme-dark');
+const themeSystemBtn = document.getElementById('theme-system');
+const addTimeButton = document.getElementById('add-time');
+const timerTitle = document.getElementById('timer-title');
+const taskInput = document.getElementById('task-input');
 
 function updateDisplay() {
     const minutes = Math.floor(timeLeft / 60);
@@ -18,7 +24,8 @@ function updateDisplay() {
     
     const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     const mode = isWorkTime ? 'Work' : 'Break';
-    document.title = `${timeString} - ${mode} Time`;
+    const task = timerTitle.textContent !== 'Pomodoro Timer' ? ` - ${timerTitle.textContent}` : '';
+    document.title = `${timeString} - ${mode}${task}`;
 }
 
 function switchMode() {
@@ -31,6 +38,14 @@ function switchMode() {
 
 function startTimer() {
     if (timerId !== null) return;
+    
+    // If timer hasn't been started yet, prompt for task
+    if (timerTitle.textContent === 'Pomodoro Timer') {
+        const task = prompt('What are you focusing on?');
+        if (task && task.trim()) {
+            timerTitle.textContent = task.trim();
+        }
+    }
     
     timerId = setInterval(() => {
         timeLeft--;
@@ -57,6 +72,46 @@ function resetTimer() {
     updateDisplay();
 }
 
+function getSystemTheme() {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function setTheme(theme) {
+    const savedPreference = theme;
+    if (theme === 'system') {
+        theme = getSystemTheme();
+    }
+    
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme-preference', savedPreference);
+    
+    // Update active states
+    themeLightBtn.classList.toggle('active', savedPreference === 'light');
+    themeDarkBtn.classList.toggle('active', savedPreference === 'dark');
+    themeSystemBtn.classList.toggle('active', savedPreference === 'system');
+}
+
+function addFiveMinutes() {
+    timeLeft += 5 * 60; // Add 5 minutes (300 seconds)
+    updateDisplay();
+}
+
+function showTaskInput() {
+    const currentText = timerTitle.textContent;
+    timerTitle.style.display = 'none';
+    taskInput.style.display = 'block';
+    taskInput.value = currentText === 'Pomodoro Timer' ? '' : currentText;
+    taskInput.focus();
+}
+
+function hideTaskInput() {
+    if (taskInput.value.trim()) {
+        timerTitle.textContent = taskInput.value.trim();
+    }
+    timerTitle.style.display = 'block';
+    taskInput.style.display = 'none';
+}
+
 startButton.addEventListener('click', () => {
     if (timerId === null) {
         startTimer();
@@ -77,5 +132,31 @@ toggleModeButton.addEventListener('click', () => {
     switchMode();
 });
 
+themeLightBtn.addEventListener('click', () => setTheme('light'));
+themeDarkBtn.addEventListener('click', () => setTheme('dark'));
+themeSystemBtn.addEventListener('click', () => setTheme('system'));
+
+addTimeButton.addEventListener('click', addFiveMinutes);
+
+timerTitle.addEventListener('click', showTaskInput);
+
+taskInput.addEventListener('blur', hideTaskInput);
+taskInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        hideTaskInput();
+    }
+});
+
 // Initialize display
-updateDisplay(); 
+updateDisplay();
+
+// Initialize theme
+const savedTheme = localStorage.getItem('theme-preference') || 'system';
+setTheme(savedTheme);
+
+// Listen for system theme changes
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (localStorage.getItem('theme-preference') === 'system') {
+        setTheme('system');
+    }
+}); 
